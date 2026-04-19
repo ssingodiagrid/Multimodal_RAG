@@ -19,7 +19,7 @@ Use this when something fails or behaves wrong (indexing, retrieval, empty conte
 
 ## 2. Best default strategy: bisect with flags (no code change)
 
-Most behavior is gated by **environment variables** (see [`.env.example`](../.env.example)). Copy to `.env` and turn **off** optional layers until the problem disappears; that tells you which subsystem to inspect.
+Most behavior is gated by **environment variables** (see [`.env.example`]). Copy to `.env` and turn **off** optional layers until the problem disappears; that tells you which subsystem to inspect.
 
 **Suggested order (from cheap to expensive / broad):**
 
