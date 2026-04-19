@@ -4,6 +4,7 @@
 .env.*.local
 .env.development
 .env.production
+.env.example
 
 # GCP / Google service account & OAuth-style key files (common names)
 gcp-key.json
