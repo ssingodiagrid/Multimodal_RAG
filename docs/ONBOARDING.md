@@ -10,7 +10,7 @@ Use this guide if you are new to the repo and want a **deliberate path** through
 |------|----------------|-----|
 | 1 | [README.md](../README.md) | Setup, how to run the UI, high-level folder layout, phase summaries. |
 | 1b | [ARCHITECTURE.md](ARCHITECTURE.md) | **Full stack map**: each task → library or module (e.g. RecursiveCharacterTextSplitter for chunking). |
-| 2 | [.env.example](../.env.example) | Every feature flag and path the app understands (skim section headers). |
+| 2 | [.env.example] | Every feature flag and path the app understands (skim section headers). |
 | 3 | [docs/superpowers/specs/2026-04-16-multimodal-rag-phase1-6-design.md](superpowers/specs/2026-04-16-multimodal-rag-phase1-6-design.md) | **Roadmap only** — read the intro, “Architecture Overview”, and “Module Boundaries” (ingestion / retrieval / generation). Skip long phase checklists on first pass. |
 
 After this, you should know: *PDF in → chunks + indexes → query → retrieve → prompt → Gemini answer*, and that features are gated by **env flags**.
