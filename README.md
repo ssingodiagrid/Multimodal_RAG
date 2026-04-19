@@ -23,19 +23,129 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` (start from **`.env.example`** — it stays in git; `.env` is local):
 
-- `GCP_PROJECT_ID` — your GCP project
-- `GCP_LOCATION` — e.g. `us-central1`
-- `GEMINI_MODEL` — Vertex model id, e.g. `gemini-2.0-flash-001`
-- **Credentials (pick one):**
-  - Set `GOOGLE_APPLICATION_CREDENTIALS` to the path of your service account JSON (e.g. `./gcp-key.json`), **or**
-  - Set `GOOGLE_APPLICATION_CREDENTIALS_DIR` (e.g. `./secrets`) and place `gcp-key.json` there (or set `GCP_KEY_FILENAME`), **or**
-  - Set `GCP_SERVICE_ACCOUNT_KEY_PATH` to the JSON path
+- **Minimum for the app:** `GCP_PROJECT_ID`, `GCP_LOCATION`, `GEMINI_MODEL`, and **one** GCP credential approach (see table below).
+- **Full catalog:** every variable the app and scripts read from the environment is listed in the **Environment variables** section below and mirrored in **`.env.example`**.
 
 The app loads `.env` automatically if `python-dotenv` is installed (`requirements.txt` includes it).
 
 **Security:** Do not commit `gcp-key.json` or `.env`. They are listed in `.gitignore`. If a key was ever committed or shared, **rotate it in GCP**.
+
+### Environment variables (reference)
+
+Copy `cp .env.example .env`, then set values. **Authoritative names and defaults** live in **`.env.example`**; this table summarizes purpose.
+
+**Text index & chunking**
+
+| Variable | Purpose |
+|----------|---------|
+| `CHUNK_SIZE` | Max characters per text chunk (recursive splitter target size). |
+| `CHUNK_OVERLAP` | Overlap between consecutive text chunks. |
+| `TOP_K` | Chunks passed to the generator after retrieval (and related caps). |
+| `EMBEDDING_MODEL` | `sentence-transformers` model id for dense vectors (e.g. BGE-small). |
+| `FAISS_INDEX_PATH` | Base path for the text FAISS index (`.faiss` + `.meta.json` siblings). |
+
+**Vertex AI (required for generation / captions / LLM helpers)**
+
+| Variable | Purpose |
+|----------|---------|
+| `GCP_PROJECT_ID` | GCP project id. |
+| `GCP_LOCATION` | Vertex region (e.g. `us-central1`). |
+| `GEMINI_MODEL` | Vertex **model resource** id (e.g. `gemini-2.0-flash-001`). |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (recommended). |
+| `GOOGLE_APPLICATION_CREDENTIALS_DIR` | Directory containing the key file (with `GCP_KEY_FILENAME`). |
+| `GCP_KEY_FILENAME` | Key file name inside `GOOGLE_APPLICATION_CREDENTIALS_DIR` (default `gcp-key.json`). |
+| `GCP_SERVICE_ACCOUNT_KEY_PATH` | Explicit path to service account JSON. |
+
+**Observability (optional)**
+
+| Variable | Purpose |
+|----------|---------|
+| `LANGFUSE_PUBLIC_KEY` | Langfuse public key (empty = no traces). |
+| `LANGFUSE_SECRET_KEY` | Langfuse secret key. |
+| `LANGFUSE_HOST` | Langfuse API host (default cloud host if unset). |
+
+**Phase 2 evaluation**
+
+| Variable | Purpose |
+|----------|---------|
+| `EVAL_DATASET_PATH` | JSONL eval questions/answers for `run_phase2_eval.py`. |
+| `EVAL_OUTPUT_DIR` | Directory for eval JSON reports. |
+| `PHASE2_EVAL_SOURCE_PDF` | Source PDF for `prepare_phase2_dataset.py`. |
+| `PHASE2_CORPUS_PDF` | Corpus PDF for `scripts/index_phase2_corpus.py` (optional; script has its own default). |
+
+**Phase 3 hybrid + rerank**
+
+| Variable | Purpose |
+|----------|---------|
+| `ENABLE_HYBRID` | Dense + BM25 hybrid on/off. |
+| `ENABLE_RERANK` | Cross-encoder rerank on/off. |
+| `HYBRID_ALPHA` | Weight for dense vs sparse in fusion. |
+| `DENSE_TOP_K` | FAISS candidate depth. |
+| `SPARSE_TOP_K` | BM25 candidate depth. |
+| `HYBRID_TOP_N` | Fused pool size before rerank. |
+| `RERANK_TOP_K` | Reranker pool / cap. |
+| `RERANK_MODEL` | Cross-encoder Hugging Face model id. |
+| `SPARSE_INDEX_PATH` | BM25 JSON corpus path (from `index_phase3_sparse.py`). |
+
+**Phase 4 cache, multi-hop, query refinement**
+
+| Variable | Purpose |
+|----------|---------|
+| `ENABLE_SEMANTIC_CACHE` | Semantic query cache on/off. |
+| `SEMANTIC_CACHE_THRESHOLD` | Min cosine similarity for cache hit. |
+| `SEMANTIC_CACHE_MAX_ENTRIES` | Cache size cap / eviction. |
+| `SEMANTIC_CACHE_PATH` | Cache files base path. |
+| `ENABLE_MULTI_HOP` | Two-hop retrieval on/off. |
+| `MULTI_HOP_MODE` | `off` \| `heuristic` \| `always`. |
+| `MULTI_HOP_MERGED_TOP_K` | Max chunks after merging hop 1 + hop 2. |
+| `ENABLE_QUERY_REFINEMENT` | LLM query rewrite + dual retrieval merge on/off. |
+
+**Phase 5 tables, images, router**
+
+| Variable | Purpose |
+|----------|---------|
+| `ENABLE_TABLE_EXTRACTION` | Extract and index tables. |
+| `ENABLE_IMAGE_CAPTIONS` | Extract images + Gemini captions into index. |
+| `ENABLE_IMAGE_PAGE_RENDERS` | Rasterize pages / figure regions for extra image chunks. |
+| `IMAGE_PAGE_RENDER_DPI` | Render resolution. |
+| `IMAGE_PAGE_RENDER_STRATEGY` | `figures` \| `full_pages`. |
+| `ENABLE_MODALITY_ROUTER` | Route/bias retrieval by text/table/image intent. |
+| `ROUTER_USE_LLM` | Use Gemini for router instead of heuristics only. |
+| `TABLE_MAX_ROWS_PER_CHUNK` | Cap rows serialized per table chunk. |
+| `IMAGE_CAPTION_MAX_SIDE` | Max image side (px) for captioning. |
+| `ASSETS_DIR` | On-disk image (and related) assets per `doc_id`. |
+| `TABLE_EXTRACTOR` | `pdfplumber` \| `camelot`. |
+
+**Phase 6 CLIP visual index**
+
+| Variable | Purpose |
+|----------|---------|
+| `ENABLE_VISUAL_RETRIEVAL` | Build/query CLIP visual FAISS on/off. |
+| `VISUAL_FAISS_INDEX_PATH` | Visual FAISS base path. |
+| `VISUAL_EMBEDDING_MODEL` | CLIP-class model id. |
+| `VISUAL_TOP_K` | Visual search depth. |
+| `VISUAL_FUSION_LAMBDA` | Fusion weight (text vs visual). |
+| `VISUAL_DEVICE` | `mps` \| `cuda` \| `cpu` or empty = auto. |
+| `VISUAL_BATCH_SIZE` | Batch size for visual encoding at index time. |
+| `VISUAL_FOR_IMAGE_INTENT_ONLY` | Skip CLIP query encode for pure-text intent when true. |
+
+**ColPali (full-page late interaction)**
+
+| Variable | Purpose |
+|----------|---------|
+| `ENABLE_COLPALI_INDEX` | Build ColPali page index at PDF ingest. |
+| `ENABLE_COLPALI_RETRIEVAL` | Run ColPali search at query time. |
+| `COLPALI_MODEL_ID` | Hugging Face ColPali model id. |
+| `COLPALI_INDEX_DIR` | On-disk ColPali index root. |
+| `COLPALI_PAGE_DPI` | Raster DPI for pages. |
+| `COLPALI_MAX_INDEX_PAGES` | Max pages to index (`0` = all). |
+| `COLPALI_TOP_K` | Pages retrieved for the prompt. |
+| `COLPALI_DEVICE` | `mps` \| `cuda` \| `cpu` or empty = auto. |
+| `COLPALI_MAX_IMAGES_FOR_LLM` | Max page images sent to Gemini. |
+
+When you add a new setting in `configs/settings.py`, update **`.env.example`** and this section so they stay in sync.
 
 3. Enable the **Vertex AI API** for your project and ensure the service account has permission to use Generative AI on Vertex (e.g. `Vertex AI User`).
 
@@ -86,8 +196,7 @@ Index the evaluation corpus first (your IFC annual report):
 python scripts/index_phase2_corpus.py
 ```
 
-This uses `/Users/ssingodia/Desktop/RAG/ifc-annual-report-2024-financials.pdf` by default.
-Override with:
+This uses a default corpus path inside the script unless you set **`PHASE2_CORPUS_PDF`** in `.env` (see environment table above).
 
 ```bash
 PHASE2_CORPUS_PDF="/absolute/path/to/your.pdf" python scripts/index_phase2_corpus.py
@@ -129,11 +238,7 @@ Run Phase 3 tests:
 pytest tests/test_bm25.py tests/test_hybrid_retriever.py tests/test_reranker.py tests/test_phase3_pipeline.py -v
 ```
 
-Controls in `.env`:
-- `ENABLE_HYBRID=true|false`
-- `ENABLE_RERANK=true|false`
-- `HYBRID_ALPHA`
-- `SPARSE_INDEX_PATH`
+Main controls are listed under **Setup → Environment variables** (Phase 3 table).
 
 ## Phase 4 Semantic cache + multi-hop
 
@@ -182,6 +287,4 @@ Docs: [Phase 6 design](docs/superpowers/specs/2026-04-17-phase-6-visual-retrieva
 ```bash
 pytest tests/test_phase6_settings.py tests/test_visual_fusion.py tests/test_index_fingerprint.py tests/test_colpali_maxsim.py -v
 ```
-# Multimodal_RAG
-# Multimodal_RAG
-# Multimodal_RAG
+
