@@ -183,3 +183,4 @@ Docs: [Phase 6 design](docs/superpowers/specs/2026-04-17-phase-6-visual-retrieva
 pytest tests/test_phase6_settings.py tests/test_visual_fusion.py tests/test_index_fingerprint.py tests/test_colpali_maxsim.py -v
 ```
 # Multimodal_RAG
+# Multimodal_RAG
