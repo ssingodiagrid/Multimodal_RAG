@@ -1,0 +1,36 @@
+# --- Local secrets & env (never commit) ---
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# GCP / Google service account & OAuth-style key files (common names)
+gcp-key.json
+*-key.json
+service-account*.json
+*-sa.json
+google-credentials.json
+client_secret*.json
+application_default_credentials.json
+
+# TLS / PKCS (if ever used for mTLS or legacy keys)
+*.pem
+*.p12
+*.pfx
+
+# --- Local tooling / OS noise ---
+.DS_Store
+
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# --- Project artifacts (regenerable; may contain indexed doc text) ---
+secrets/
+*.faiss
+*.meta.json
+data/parsed/
+data/cache/
